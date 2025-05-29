@@ -1,184 +1,274 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import type { DropResult, DroppableProvided, DraggableProvided, DroppableStateSnapshot, DraggableStateSnapshot } from 'react-beautiful-dnd';
+import type { Goal } from '../types';
+import { updateGoal } from '../services/api';
+import './KanbanView.css';
 
 interface KanbanViewProps {
-  data: Array<{
-    _id: string;
-    description: string;
-    goalType: string;
-    naming: string;
-    done: boolean;
-    priority: number;
-    score: number;
-    assessment: number;
-    communityValue: number;
-    start: string;
-    end: string;
-  }>;
+  data: Goal[];
 }
 
-interface Column {
+interface KanbanColumn {
   id: string;
   title: string;
-  items: KanbanViewProps['data'];
+  status: 'not-started' | 'in-progress' | 'completed';
+  items: Goal[];
+  color: string;
 }
 
 const KanbanView: React.FC<KanbanViewProps> = ({ data }) => {
-  const [columns, setColumns] = useState<Column[]>(() => {
-    // Initialize columns
-    const initialColumns: Column[] = [
-      { id: 'not-started', title: 'Not Started', items: [] },
-      { id: 'in-progress', title: 'In Progress', items: [] },
-      { id: 'completed', title: 'Completed', items: [] }
+  const [columns, setColumns] = useState<KanbanColumn[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize columns based on data
+  useEffect(() => {
+    const initialColumns: KanbanColumn[] = [
+      { 
+        id: 'not-started', 
+        title: 'Not Started', 
+        status: 'not-started',
+        items: [], 
+        color: '#e3f2fd' 
+      },
+      { 
+        id: 'in-progress', 
+        title: 'In Progress', 
+        status: 'in-progress',
+        items: [], 
+        color: '#fff3e0' 
+      },
+      { 
+        id: 'completed', 
+        title: 'Completed', 
+        status: 'completed',
+        items: [], 
+        color: '#e8f5e9' 
+      }
     ];
 
-    // Sort items into columns
-    data.forEach(item => {
-      if (item.done) {
-        initialColumns[2].items.push(item);
+    // Sort goals into columns based on their status and done flag
+    data.forEach(goal => {
+      if (goal.done) {
+        initialColumns[2].items.push(goal);
       } else {
-        // Check if the item has started
-        const startDate = new Date(item.start);
+        // Check if goal has started based on start date or lastSelected
+        const startDate = goal.start ? new Date(goal.start) : null;
+        const lastSelected = new Date(goal.lastSelected);
         const now = new Date();
-        if (startDate <= now) {
-          initialColumns[1].items.push(item);
+        
+        // Consider it "in progress" if recently selected (within 7 days) or has start date in past
+        const recentlySelected = (now.getTime() - lastSelected.getTime()) < (7 * 24 * 60 * 60 * 1000);
+        const hasStarted = startDate && startDate <= now;
+        
+        if (recentlySelected || hasStarted) {
+          initialColumns[1].items.push(goal);
         } else {
-          initialColumns[0].items.push(item);
+          initialColumns[0].items.push(goal);
         }
       }
     });
 
-    return initialColumns;
-  });
+    // Sort items by priority within each column
+    initialColumns.forEach(column => {
+      column.items.sort((a, b) => b.effectivePriority - a.effectivePriority);
+    });
 
-  const onDragEnd = (result: DropResult) => {
+    setColumns(initialColumns);
+  }, [data]);
+
+  const onDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
 
-    const { source, destination } = result;
+    const { source, destination, draggableId } = result;
     
-    if (source.droppableId === destination.droppableId) {
-      // Reordering within the same column
-      const column = columns.find(col => col.id === source.droppableId);
-      if (!column) return;
+    setIsLoading(true);
+    setError(null);
 
-      const copiedItems = [...column.items];
-      const [removed] = copiedItems.splice(source.index, 1);
-      copiedItems.splice(destination.index, 0, removed);
+    try {
+      // Find the goal being moved
+      const goal = data.find(g => g._id === draggableId);
+      if (!goal) throw new Error('Goal not found');
 
-      setColumns(columns.map(col => 
-        col.id === source.droppableId ? { ...col, items: copiedItems } : col
-      ));
-    } else {
-      // Moving between columns
-      const sourceColumn = columns.find(col => col.id === source.droppableId);
-      const destColumn = columns.find(col => col.id === destination.droppableId);
-      if (!sourceColumn || !destColumn) return;
+      // Update local state first for immediate feedback
+      const newColumns = [...columns];
+      
+      if (source.droppableId === destination.droppableId) {
+        // Reordering within the same column
+        const columnIndex = newColumns.findIndex(col => col.id === source.droppableId);
+        if (columnIndex === -1) return;
 
-      const sourceItems = [...sourceColumn.items];
-      const destItems = [...destColumn.items];
-      const [removed] = sourceItems.splice(source.index, 1);
-      destItems.splice(destination.index, 0, removed);
+        const copiedItems = [...newColumns[columnIndex].items];
+        const [removed] = copiedItems.splice(source.index, 1);
+        copiedItems.splice(destination.index, 0, removed);
 
-      setColumns(columns.map(col => {
-        if (col.id === source.droppableId) {
-          return { ...col, items: sourceItems };
-        }
-        if (col.id === destination.droppableId) {
-          return { ...col, items: destItems };
-        }
-        return col;
-      }));
+        newColumns[columnIndex] = { ...newColumns[columnIndex], items: copiedItems };
+      } else {
+        // Moving between columns - update goal status
+        const sourceColumnIndex = newColumns.findIndex(col => col.id === source.droppableId);
+        const destColumnIndex = newColumns.findIndex(col => col.id === destination.droppableId);
+        if (sourceColumnIndex === -1 || destColumnIndex === -1) return;
+
+        const sourceItems = [...newColumns[sourceColumnIndex].items];
+        const destItems = [...newColumns[destColumnIndex].items];
+        const [removed] = sourceItems.splice(source.index, 1);
+        destItems.splice(destination.index, 0, removed);
+
+        newColumns[sourceColumnIndex] = { ...newColumns[sourceColumnIndex], items: sourceItems };
+        newColumns[destColumnIndex] = { ...newColumns[destColumnIndex], items: destItems };
+
+        // Update goal status in database
+        const destColumn = newColumns[destColumnIndex];
+        const updatedGoal = {
+          ...goal,
+          done: destColumn.status === 'completed',
+          lastSelected: new Date().toISOString(),
+          // Update start date if moving to in-progress and no start date set
+          start: destColumn.status === 'in-progress' && !goal.start 
+            ? new Date().toISOString() 
+            : goal.start
+        };
+
+        await updateGoal(goal._id, updatedGoal);
+      }
+
+      setColumns(newColumns);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update goal');
+      // Revert to original state on error
+      setColumns(columns);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const getGoalTypeIcon = (goalType: string) => {
+    switch (goalType) {
+      case 'Overarching': return '🎯';
+      case 'Longterm': return '📈';
+      case 'Moderate': return '📋';
+      case 'Micro': return '⚡';
+      case 'Day': return '📅';
+      default: return '📄';
+    }
+  };
+
+  const getPriorityColor = (priority: number) => {
+    if (priority >= 3) return '#ff4444';
+    if (priority >= 2) return '#ff8800';
+    if (priority >= 1) return '#4CAF50';
+    return '#9e9e9e';
+  };
+
+  if (error) {
+    return (
+      <div className="kanban-error">
+        <p>Error: {error}</p>
+        <button onClick={() => setError(null)}>Dismiss</button>
+      </div>
+    );
+  }
+
   return (
     <div className="kanban-view">
-      <h2>Kanban Board</h2>
+      <div className="kanban-header">
+        <h2>🔄 Kanban Board</h2>
+        <p>Drag goals between columns to update their status</p>
+        {isLoading && <div className="loading-indicator">Updating...</div>}
+      </div>
+      
       <DragDropContext onDragEnd={onDragEnd}>
-        <div style={{ 
-          display: 'flex', 
-          gap: '20px', 
-          padding: '20px',
-          minHeight: '600px'
-        }}>
+        <div className="kanban-board">
           {columns.map(column => (
             <div 
               key={column.id}
-              style={{
-                flex: 1,
-                background: '#f5f5f5',
-                borderRadius: '8px',
-                padding: '16px',
-                minWidth: '300px'
-              }}
+              className="kanban-column"
+              style={{ '--column-color': column.color } as React.CSSProperties}
             >
-              <h3 style={{ 
-                margin: '0 0 16px 0',
-                fontSize: '18px',
-                color: '#333',
-                fontWeight: '600'
-              }}>
-                {column.title}
-              </h3>
-              <Droppable 
-                droppableId={column.id} 
-                isDropDisabled={false} 
-                isCombineEnabled={false}
-                ignoreContainerClipping={false}
-              >
+              <div className="column-header">
+                <h3>{column.title}</h3>
+                <span className="item-count">{column.items.length}</span>
+              </div>
+              
+              <Droppable droppableId={column.id}>
                 {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    style={{ 
-                      minHeight: '500px',
-                      backgroundColor: snapshot.isDraggingOver ? '#f0f0f0' : 'transparent',
-                      transition: 'background-color 0.2s ease'
-                    }}
+                    className={`column-content ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
                   >
-                    {column.items.map((item, index) => (
-                      <Draggable key={item._id} draggableId={item._id} index={index}>
-                        {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={{
-                              ...provided.draggableProps.style,
-                              marginBottom: '12px',
-                              padding: '12px',
-                              background: 'white',
-                              borderRadius: '6px',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                            }}
-                          >
-                            <div style={{ 
-                              fontSize: '14px', 
-                              fontWeight: '500',
-                              marginBottom: '4px',
-                              color: '#333'
-                            }}>
-                              {item.description}
+                    {column.items.length === 0 ? (
+                      <div className="empty-column">
+                        <p>No goals here</p>
+                        <small>Drag goals from other columns</small>
+                      </div>
+                    ) : (
+                      column.items.map((goal, index) => (
+                        <Draggable key={goal._id} draggableId={goal._id} index={index}>
+                          {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`kanban-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                            >
+                              <div className="card-header">
+                                <span className="goal-type">
+                                  {getGoalTypeIcon(goal.goalType)}
+                                </span>
+                                <span className="hierarchy-id">{goal.hierarchyId}</span>
+                                <div 
+                                  className="priority-indicator"
+                                  style={{ backgroundColor: getPriorityColor(goal.priority) }}
+                                  title={`Priority: ${goal.priority}`}
+                                >
+                                  {goal.priority.toFixed(1)}
+                                </div>
+                              </div>
+                              
+                              <div className="card-content">
+                                <h4 className="goal-title">{goal.description}</h4>
+                                
+                                <div className="goal-meta">
+                                  <div className="meta-item">
+                                    <span className="meta-label">Effective Priority:</span>
+                                    <span className="meta-value">{goal.effectivePriority.toFixed(2)}</span>
+                                  </div>
+                                  
+                                  {goal.start && (
+                                    <div className="meta-item">
+                                      <span className="meta-label">Start:</span>
+                                      <span className="meta-value">
+                                        {new Date(goal.start).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {goal.end && (
+                                    <div className="meta-item">
+                                      <span className="meta-label">End:</span>
+                                      <span className="meta-value">
+                                        {new Date(goal.end).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="goal-stats">
+                                  <span className="stat">
+                                    📊 Score: {goal.score}
+                                  </span>
+                                  <span className="stat">
+                                    🎖️ Assessment: {goal.assessment}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: '#555',
-                              marginBottom: '4px'
-                            }}>
-                              {item.goalType} | Priority: {item.priority}
-                            </div>
-                            <div style={{ 
-                              fontSize: '11px', 
-                              color: '#666',
-                              fontStyle: 'italic'
-                            }}>
-                              {item.naming}
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
+                          )}
+                        </Draggable>
+                      ))
+                    )}
                     {provided.placeholder}
                   </div>
                 )}
