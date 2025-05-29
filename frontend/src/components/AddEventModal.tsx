@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import type { Goal, GoalEvent } from '../types';
-import { createGoalEvent, updateGoalEvent } from '../services/goalEventService';
+import { createGoalEvent, updateGoalEvent, deleteGoalEvent } from '../services/goalEventService';
 import CreateGoalModal from './CreateGoalModal';
 import { createGoal } from '../services/api';
 import './AddEventModal.css';
@@ -96,6 +96,29 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!existingEvent) return;
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete this event?\n\nGoal: ${goals.find(g => g._id === selectedGoalId)?.description || 'Unknown'}\nDate: ${format(selectedDate, 'MMMM d, yyyy')}\nNotes: ${notes || 'None'}`
+    );
+    
+    if (!confirmDelete) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      await deleteGoalEvent(existingEvent._id);
+      onEventAdded(); // Refresh the calendar
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete event');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -177,21 +200,35 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           {error && <div className="error-message">{error}</div>}
 
           <div className="modal-footer">
-            <button
-              type="button"
-              className="cancel-button"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="submit-button"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Saving...' : existingEvent ? 'Update' : 'Add'}
-            </button>
+            <div className="modal-footer-left">
+              {existingEvent && (
+                <button
+                  type="button"
+                  className="delete-button"
+                  onClick={handleDelete}
+                  disabled={isSubmitting}
+                >
+                  🗑️ Delete Event
+                </button>
+              )}
+            </div>
+            <div className="modal-footer-right">
+              <button
+                type="button"
+                className="cancel-button"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : existingEvent ? 'Update' : 'Add'}
+              </button>
+            </div>
           </div>
         </form>
 

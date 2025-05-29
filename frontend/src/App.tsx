@@ -136,7 +136,7 @@ const App: React.FC = () => {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>AI Development Knowledge Management System</h1>
+        <h1>🧠 Mind Map Goal Management System</h1>
         <button 
           className="fullscreen-button"
           onClick={toggleFullscreen}
@@ -194,7 +194,7 @@ const App: React.FC = () => {
       </main>
       {!isFullscreen && (
         <footer className="App-footer">
-          <p>© 2025 AI Development Knowledge Management System</p>
+          <p>© 2025 🧠 Mind Map Goal Management System</p>
         </footer>
       )}
       {isModalOpen && (

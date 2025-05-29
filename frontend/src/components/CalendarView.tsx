@@ -96,6 +96,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({ data }) => {
     });
   };
 
+  const getGoalName = (goalId: string) => {
+    const goal = data.find(g => g._id === goalId);
+    return goal ? goal.description : 'Unknown Goal';
+  };
+
+  const getEventDisplayText = (event: GoalEvent) => {
+    const goalName = getGoalName(event.goalId);
+    // Show notes if they exist and are short, otherwise show goal name
+    if (event.notes && event.notes.length <= 30) {
+      return event.notes;
+    }
+    // For longer notes or no notes, show goal name with optional notes indicator
+    return goalName + (event.notes ? ' 📝' : '');
+  };
+
   return (
     <div className="calendar-view" onClick={() => setContextMenu(null)}>
       <div className="calendar-header">
@@ -129,8 +144,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ data }) => {
                       key={event._id}
                       className={`event ${event.status}`}
                       onClick={(e) => handleEventClick(event, e)}
+                      title={event.notes ? `${getGoalName(event.goalId)}\nNotes: ${event.notes}` : getGoalName(event.goalId)}
                     >
-                      {event.notes || 'Event'}
+                      {getEventDisplayText(event)}
                     </div>
                   ))}
                 </div>
