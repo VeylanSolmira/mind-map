@@ -1,108 +1,166 @@
-# AI Development Knowledge Management System
+# 🧠 Mind Map Goal Management System
 
-A comprehensive knowledge management system for organizing AI development topics, capabilities, safety concerns, and tasks. This system provides multiple visualization modes and interactive features for managing your AI development knowledge base.
+A powerful, interactive goal management and visualization system built with React and Node.js. Organize your goals hierarchically, track events on a calendar, and use multiple visualization modes to stay focused on what matters most.
 
-## Features
+## ✨ Features
 
-- **Multiple Visualization Modes**
-  - Tree view for hierarchical representation
-  - Graph view for relationship visualization
-  - Table view for structured data
-  - Priority queue view with smart prioritization
+### 🎯 **Goal Management**
+- **Hierarchical Organization**: Structure goals with parent-child relationships using intuitive numbering (1.1.1, 1.2.1, etc.)
+- **Multiple Goal Types**: Overarching, Long-term, Moderate, Micro, and Daily goals
+- **Smart Prioritization**: Time-decay based priority system that adapts over time
+- **Quick Actions**: Create new goals directly from event creation
 
-- **Interactive Data Management**
-  - Drag-and-drop node manipulation
-  - Inline editing of node properties
-  - Markdown-based content management
-  - Real-time updates across all views
+### 📅 **Calendar & Event Tracking**
+- **Interactive Calendar**: Monthly view with drag-and-drop event management
+- **Event Management**: Create, edit, and track goal-related events
+- **Status Tracking**: Mark events as planned, in-progress, or completed
+- **Duration Tracking**: Log time spent on goals
 
-- **Smart Priority System**
-  - Base priority with time decay
-  - Stochastic sampling for lower priority items
-  - Relationship-based prioritization
-  - Visual priority indicators
+### 🎨 **Multiple Visualization Modes**
+- **📊 Table View**: Sortable, filterable data grid with inline editing
+- **🌳 Tree View**: Interactive hierarchical visualization with D3.js
+- **📈 Timeline View**: Chronological goal progression
+- **📋 Kanban View**: Drag-and-drop board organization  
+- **🎲 Select View**: Random goal selection based on priority weights
+- **📅 Calendar View**: Monthly event scheduling and tracking
 
-## Project Structure
+### 🔧 **Advanced Features**
+- **Real-time Updates**: Changes sync across all views instantly
+- **Inline Editing**: Click to edit goals and events directly
+- **Priority Decay**: Automatic priority adjustment based on time since last activity
+- **Bulk Operations**: Manage multiple goals efficiently
+- **Export/Import**: CSV support for data management
 
-```
-mind-map/
-├── frontend/           # React frontend application
-├── backend/           # Node.js/Express backend
-└── docs/             # Project documentation
-```
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js (v16 or higher)
-- MongoDB
-- npm or yarn
+- **Node.js** 16+ 
+- **MongoDB** (local or cloud)
+- **npm** or **yarn**
 
 ### Installation
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository**
    ```bash
-   # Install backend dependencies
-   cd backend
-   npm install
-
-   # Install frontend dependencies
-   cd ../frontend
-   npm install
+   git clone https://github.com/yourusername/mind-map.git
+   cd mind-map
    ```
 
-3. Set up environment variables:
+2. **Set up environment variables**
    ```bash
-   # In backend directory
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your MongoDB URI and preferences
    ```
 
-4. Start the development servers:
+3. **Install dependencies**
    ```bash
-   # Start backend (from backend directory)
-   npm run dev
+   # Backend dependencies
+   cd backend && npm install
 
-   # Start frontend (from frontend directory)
-   npm start
+   # Frontend dependencies  
+   cd ../frontend && npm install
    ```
 
-## Development
+4. **Start the application**
+   ```bash
+   # Terminal 1: Start backend
+   cd backend && npm run dev
+
+   # Terminal 2: Start frontend
+   cd frontend && npm run dev
+   ```
+
+5. **Open your browser**
+   ```
+   http://localhost:5173
+   ```
+
+## 🏗️ Tech Stack
 
 ### Backend
+- **Node.js** + **Express** - REST API server
+- **MongoDB** + **Mongoose** - Database and ODM
+- **TypeScript** - Type safety
+- **Jest** - Testing framework
 
-The backend is built with Node.js and Express, providing:
-- RESTful API endpoints
-- MongoDB integration
-- File system storage for markdown content
-- Authentication and authorization
+### Frontend  
+- **React 18** + **TypeScript** - UI framework
+- **Vite** - Build tool and dev server
+- **D3.js** - Tree visualization
+- **React Beautiful DnD** - Drag and drop
+- **date-fns** - Date manipulation
+- **Axios** - HTTP client
 
-### Frontend
+## 📖 Usage Examples
 
-The frontend is built with React and TypeScript, featuring:
-- Multiple visualization components
-- Interactive data manipulation
-- Real-time updates
-- Responsive design
+### Creating a Goal Hierarchy
+```
+1. Career Development
+├── 1.1 Technical Skills
+│   ├── 1.1.1 Learn React
+│   └── 1.1.2 Master TypeScript
+└── 1.2 Leadership
+    ├── 1.2.1 Team Management
+    └── 1.2.2 Public Speaking
+```
 
-## Documentation
+### Scheduling Goal Events
+1. Navigate to **Calendar View**
+2. Click on any date to create an event
+3. Select existing goal or create new one
+4. Set duration, status, and notes
+5. Track progress over time
 
-Detailed documentation can be found in the `docs/` directory:
-- API documentation
-- Component documentation
-- Data structure documentation
-- Development guidelines
+### Priority-Based Goal Selection
+1. Switch to **Select View**
+2. Let the system randomly select goals based on:
+   - Base priority levels
+   - Time since last activity
+   - Exponential decay weighting
 
-## Contributing
+## 🔧 Configuration
+
+### Environment Variables (.env)
+```bash
+# Database
+MONGODB_URI=mongodb://localhost:27017/mind-map
+
+# Server
+PORT=3001
+NODE_ENV=development
+
+# Frontend (for development)
+VITE_API_URL=http://localhost:3001/api
+```
+
+### Goal Types & Colors
+- **Overarching** (Blue): Life-changing, major objectives
+- **Long-term** (Green): 6-12 month goals  
+- **Moderate** (Orange): 1-6 month goals
+- **Micro** (Purple): Week-to-month tasks
+- **Day** (Teal): Daily/immediate actions
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **D3.js** community for excellent visualization tools
+- **React** team for the amazing framework
+- **MongoDB** for flexible data storage
+- All contributors who help improve this project
+
+---
+
+**⭐ Star this repository if you find it helpful!** 
