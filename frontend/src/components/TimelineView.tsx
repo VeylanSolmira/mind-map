@@ -1,20 +1,9 @@
 import React from 'react';
 import { format } from 'date-fns';
+import type { Goal } from '../types';
 
 interface TimelineViewProps {
-  data: Array<{
-    _id: string;
-    description: string;
-    goalType: string;
-    naming: string;
-    done: boolean;
-    priority: number;
-    score: number;
-    assessment: number;
-    communityValue: number;
-    start: string;
-    end: string;
-  }>;
+  data: Goal[];
 }
 
 const TimelineView: React.FC<TimelineViewProps> = ({ data }) => {
@@ -84,14 +73,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({ data }) => {
                   {item.done ? 'Completed' : 'In Progress'}
                 </div>
               </div>
-              {item.naming && (
+              {item.hierarchyId && (
                 <div style={{ 
                   fontSize: '12px', 
                   color: '#666',
                   marginTop: '8px',
                   fontStyle: 'italic'
                 }}>
-                  Path: {item.naming}
+                  Path: {item.hierarchyId}
                 </div>
               )}
             </div>

@@ -5,28 +5,30 @@ export interface Goal {
   goalType: string;
   done: boolean;
   priority: number;
-  effectivePriority: number;
-  lastSelected: string;
-  decayRate: number;
   score: number;
   assessment: number;
   communityValue: number;
   start: string;
   end: string;
-  createdAt: string;
-  updatedAt: string;
+  lastSelected: string;  // ISO date string
+  effectivePriority: number;
+  decayRate: number;
+  autoIngest: boolean;
+  link: string;
+  summary: string;
+  tier: string;
+  domain: string;
+  subtopic: string;
+  tags: string;
+  next_action_date: string;
+  action_note: string;
+  date_added: string;
+  startDate?: string;  // ISO date string
+  endDate?: string;    // ISO date string
+  status: 'active' | 'completed' | 'archived';
+  createdAt: string;   // ISO date string
+  updatedAt: string;   // ISO date string
   children?: Goal[];
-  // Research and bookmark related fields
-  link?: string;
-  summary?: string;
-  autoIngest?: boolean;
-  tier?: string;
-  domain?: string;
-  subtopic?: string;
-  tags?: string;
-  next_action_date?: string;
-  action_note?: string;
-  date_added?: string;
 }
 
 export interface GoalEvent {

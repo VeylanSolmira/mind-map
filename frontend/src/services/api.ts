@@ -59,25 +59,4 @@ export default {
   createGoal,
   updateGoal,
   deleteGoal
-};
-
-/* Commented out local Goal interface
-export interface Goal {
-  _id: string;  // MongoDB's _id
-  hierarchyId: string;  // Hierarchical path (e.g. "1.1.1")
-  description: string;
-  goalType: string;
-  naming: string;
-  done: boolean;
-  priority: number;
-  effectivePriority: number;  // Calculated priority with time decay
-  lastSelected: string;  // ISO date string of when the goal was last selected
-  decayRate: number;  // Rate at which the priority decays over time
-  score: number;
-  assessment: number;
-  communityValue: number;
-  start: string;
-  end: string;
-  children?: Goal[];
-}
-*/ 
+}; 

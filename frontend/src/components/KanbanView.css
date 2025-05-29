@@ -1,8 +1,10 @@
 .kanban-view {
   padding: 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: calc(100vh - 120px);
+  min-height: 100vh;
   font-family: system-ui, -apple-system, sans-serif;
+  position: relative;
+  width: 100%;
 }
 
 .kanban-header {
@@ -65,7 +67,6 @@
 .kanban-board {
   display: flex;
   gap: 24px;
-  overflow-x: auto;
   padding: 0 8px 20px 8px;
   min-height: 600px;
 }
@@ -74,14 +75,14 @@
   flex: 1;
   min-width: 320px;
   max-width: 400px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 0;
-  overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .kanban-column:hover {
@@ -96,13 +97,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 16px 16px 0 0;
 }
 
 .column-header h3 {
   margin: 0;
   font-size: 1.3rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #1a202c !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .item-count {
@@ -119,11 +122,14 @@
 .column-content {
   padding: 16px;
   min-height: 500px;
+  flex: 1;
   transition: background-color 0.2s ease;
 }
 
 .column-content.dragging-over {
-  background-color: rgba(0, 123, 255, 0.05);
+  background: rgba(74, 144, 226, 0.08);
+  border: 2px dashed #4a90e2;
+  border-radius: 0 0 16px 16px;
 }
 
 .empty-column {
@@ -158,20 +164,39 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: grab;
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
-  overflow: hidden;
+  user-select: none;
 }
 
 .kanban-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
-.kanban-card.dragging {
-  transform: rotate(5deg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+.kanban-card:active {
   cursor: grabbing;
+}
+
+/* Dragging state applied by react-beautiful-dnd */
+.kanban-card[data-is-dragging="true"] {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  cursor: grabbing;
+}
+
+/* react-beautiful-dnd dragging clone styles */
+.kanban-card.dragging {
+  opacity: 0.8;
+  transform: rotate(2deg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Placeholder for where the item will be dropped */
+div[data-rbd-placeholder-context-id] {
+  background: rgba(74, 144, 226, 0.1) !important;
+  border: 2px dashed #4a90e2 !important;
+  border-radius: 12px !important;
+  margin-bottom: 16px !important;
 }
 
 .card-header {

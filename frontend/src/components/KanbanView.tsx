@@ -7,6 +7,7 @@ import './KanbanView.css';
 
 interface KanbanViewProps {
   data: Goal[];
+  onDataRefresh?: () => void;
 }
 
 interface KanbanColumn {
@@ -17,7 +18,7 @@ interface KanbanColumn {
   color: string;
 }
 
-const KanbanView: React.FC<KanbanViewProps> = ({ data }) => {
+const KanbanView: React.FC<KanbanViewProps> = ({ data, onDataRefresh }) => {
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,19 +51,16 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data }) => {
 
     // Sort goals into columns based on their status and done flag
     data.forEach(goal => {
-      if (goal.done) {
+      if (goal.done || goal.status === 'completed') {
         initialColumns[2].items.push(goal);
       } else {
-        // Check if goal has started based on start date or lastSelected
-        const startDate = goal.start ? new Date(goal.start) : null;
-        const lastSelected = new Date(goal.lastSelected);
+        // Kanban column logic based only on explicit status, not lastSelected
+        const hasStartDate = goal.start && goal.start.trim() !== '';
+        const startDate = hasStartDate ? new Date(goal.start) : null;
         const now = new Date();
-        
-        // Consider it "in progress" if recently selected (within 7 days) or has start date in past
-        const recentlySelected = (now.getTime() - lastSelected.getTime()) < (7 * 24 * 60 * 60 * 1000);
         const hasStarted = startDate && startDate <= now;
         
-        if (recentlySelected || hasStarted) {
+        if (hasStarted) {
           initialColumns[1].items.push(goal);
         } else {
           initialColumns[0].items.push(goal);
@@ -79,65 +77,181 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data }) => {
   }, [data]);
 
   const onDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
+    if (!result.destination) {
+      return;
+    }
 
     const { source, destination, draggableId } = result;
+    
+    console.log('Drag operation:', { 
+      source: source.droppableId, 
+      destination: destination.droppableId, 
+      goalId: draggableId,
+      availableGoalIds: data.map(g => g._id).slice(0, 5) // Log first 5 IDs for debugging
+    });
+    
+    // Find the goal being moved - check both data and current columns
+    let goal = data.find(g => g._id === draggableId);
+    
+    if (!goal) {
+      // If not in data, check if it exists in current columns (might be stale)
+      const allColumnItems = columns.flatMap(col => col.items);
+      goal = allColumnItems.find(g => g._id === draggableId);
+      
+      if (!goal) {
+        console.error('Goal not found in data or columns:', draggableId);
+        setError('Goal not found. Refreshing data...');
+        if (onDataRefresh) {
+          onDataRefresh();
+        }
+        return;
+      } else {
+        console.warn('Goal found in columns but not in data - data may be stale');
+        // Don't proceed with database update for stale goals
+        setError('Data may be outdated. Refreshing...');
+        if (onDataRefresh) {
+          onDataRefresh();
+        }
+        return;
+      }
+    }
+
+    // Create fresh columns from current data
+    const freshColumns: KanbanColumn[] = [
+      { 
+        id: 'not-started', 
+        title: 'Not Started', 
+        status: 'not-started',
+        items: [], 
+        color: '#e3f2fd' 
+      },
+      { 
+        id: 'in-progress', 
+        title: 'In Progress', 
+        status: 'in-progress',
+        items: [], 
+        color: '#fff3e0' 
+      },
+      { 
+        id: 'completed', 
+        title: 'Completed', 
+        status: 'completed',
+        items: [], 
+        color: '#e8f5e9' 
+      }
+    ];
+
+    // Rebuild columns from current data
+    data.forEach(g => {
+      if (g.done || g.status === 'completed') {
+        freshColumns[2].items.push(g);
+      } else {
+        // Kanban column logic based only on explicit status, not lastSelected
+        const hasStartDate = g.start && g.start.trim() !== '';
+        const startDate = hasStartDate ? new Date(g.start) : null;
+        const now = new Date();
+        const hasStarted = startDate && startDate <= now;
+        
+        if (hasStarted) {
+          freshColumns[1].items.push(g);
+        } else {
+          freshColumns[0].items.push(g);
+        }
+      }
+    });
+
+    // Sort items by priority within each column
+    freshColumns.forEach(column => {
+      column.items.sort((a, b) => b.effectivePriority - a.effectivePriority);
+    });
+
+    // Now apply the drag operation to fresh columns
+    const sourceColumn = freshColumns.find(col => col.id === source.droppableId);
+    const destColumn = freshColumns.find(col => col.id === destination.droppableId);
+    
+    if (!sourceColumn || !destColumn) {
+      console.error('Column not found in fresh columns');
+      return;
+    }
+
+    // Find the goal in the source column
+    const sourceGoalIndex = sourceColumn.items.findIndex(g => g._id === draggableId);
+    if (sourceGoalIndex === -1) {
+      console.error('Goal not found in source column of fresh data');
+      setError('Goal position outdated. Refreshing...');
+      if (onDataRefresh) {
+        onDataRefresh();
+      }
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
 
     try {
-      // Find the goal being moved
-      const goal = data.find(g => g._id === draggableId);
-      if (!goal) throw new Error('Goal not found');
-
-      // Update local state first for immediate feedback
-      const newColumns = [...columns];
-      
       if (source.droppableId === destination.droppableId) {
         // Reordering within the same column
-        const columnIndex = newColumns.findIndex(col => col.id === source.droppableId);
-        if (columnIndex === -1) return;
-
-        const copiedItems = [...newColumns[columnIndex].items];
-        const [removed] = copiedItems.splice(source.index, 1);
-        copiedItems.splice(destination.index, 0, removed);
-
-        newColumns[columnIndex] = { ...newColumns[columnIndex], items: copiedItems };
+        const [removed] = sourceColumn.items.splice(sourceGoalIndex, 1);
+        sourceColumn.items.splice(destination.index, 0, removed);
       } else {
-        // Moving between columns - update goal status
-        const sourceColumnIndex = newColumns.findIndex(col => col.id === source.droppableId);
-        const destColumnIndex = newColumns.findIndex(col => col.id === destination.droppableId);
-        if (sourceColumnIndex === -1 || destColumnIndex === -1) return;
-
-        const sourceItems = [...newColumns[sourceColumnIndex].items];
-        const destItems = [...newColumns[destColumnIndex].items];
-        const [removed] = sourceItems.splice(source.index, 1);
-        destItems.splice(destination.index, 0, removed);
-
-        newColumns[sourceColumnIndex] = { ...newColumns[sourceColumnIndex], items: sourceItems };
-        newColumns[destColumnIndex] = { ...newColumns[destColumnIndex], items: destItems };
+        // Moving between columns
+        const [removed] = sourceColumn.items.splice(sourceGoalIndex, 1);
+        destColumn.items.splice(destination.index, 0, removed);
 
         // Update goal status in database
-        const destColumn = newColumns[destColumnIndex];
-        const updatedGoal = {
-          ...goal,
+        const updatedGoal: Partial<Goal> = {
           done: destColumn.status === 'completed',
-          lastSelected: new Date().toISOString(),
-          // Update start date if moving to in-progress and no start date set
+          status: destColumn.status === 'completed' ? 'completed' as const : 'active' as const,
+          // Don't update lastSelected for column moves - it interferes with column logic
           start: destColumn.status === 'in-progress' && !goal.start 
-            ? new Date().toISOString() 
-            : goal.start
+            ? new Date().toISOString()  // Set start date when moving to in-progress
+            : destColumn.status === 'not-started' 
+            ? ''  // Clear start date when moving to not-started
+            : goal.start  // Keep existing start date for other moves
         };
 
+        console.log('Updating goal with data:', {
+          id: goal._id,
+          done: updatedGoal.done,
+          status: updatedGoal.status,
+          destination: destColumn.status,
+          currentStart: goal.start,
+          newStart: updatedGoal.start
+        });
+
         await updateGoal(goal._id, updatedGoal);
+        console.log('Successfully updated goal in database');
       }
 
-      setColumns(newColumns);
+      setColumns(freshColumns);
+      
+      // Refresh data after operation to ensure consistency
+      if (onDataRefresh) {
+        setTimeout(() => onDataRefresh(), 300);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update goal');
-      // Revert to original state on error
-      setColumns(columns);
+      console.error('Error updating goal:', err);
+      
+      // Handle 404 errors specifically - goal may have been deleted
+      if (err instanceof Error && err.message.includes('404')) {
+        setError(`Goal no longer exists in database. Refreshing data...`);
+        console.warn(`Goal ${draggableId} not found in database, refreshing data`);
+        
+        // Clear error after showing it briefly
+        setTimeout(() => setError(null), 2000);
+        
+        // Refresh data immediately to sync with database
+        if (onDataRefresh) {
+          onDataRefresh();
+        }
+      } else {
+        setError('Failed to update goal');
+        
+        // For other errors, also refresh to ensure consistency
+        if (onDataRefresh) {
+          setTimeout(() => onDataRefresh(), 1000);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -180,7 +294,7 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data }) => {
       
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-board">
-          {columns.map(column => (
+          {columns.map((column) => (
             <div 
               key={column.id}
               className="kanban-column"
@@ -191,7 +305,12 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data }) => {
                 <span className="item-count">{column.items.length}</span>
               </div>
               
-              <Droppable droppableId={column.id}>
+              <Droppable 
+                droppableId={column.id}
+                isDropDisabled={false}
+                isCombineEnabled={false}
+                ignoreContainerClipping={false}
+              >
                 {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                   <div
                     ref={provided.innerRef}
@@ -205,7 +324,11 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data }) => {
                       </div>
                     ) : (
                       column.items.map((goal, index) => (
-                        <Draggable key={goal._id} draggableId={goal._id} index={index}>
+                        <Draggable 
+                          key={goal._id} 
+                          draggableId={goal._id} 
+                          index={index}
+                        >
                           {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                             <div
                               ref={provided.innerRef}

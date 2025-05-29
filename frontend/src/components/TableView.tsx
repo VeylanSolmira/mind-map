@@ -3,25 +3,7 @@ import './TableView.css';
 import type { Goal } from '../types';
 import CreateGoalModal from './CreateGoalModal';
 
-/* Commented out local Goal interface
-interface Goal {
-  _id: string;
-  hierarchyId: string;
-  description: string;
-  goalType: string;
-  naming: string;
-  done: boolean;
-  priority: number;
-  score: number;
-  assessment: number;
-  communityValue: number;
-  start: string;
-  end: string;
-}
-*/
-
 type SortField = keyof Goal;
-type SortDirection = 'asc' | 'desc';
 
 interface TableViewProps {
   data: Goal[];
@@ -93,7 +75,6 @@ const TableView: React.FC<TableViewProps> = ({ data }) => {
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchField, setSearchField] = useState<keyof Goal | null>(null);
-  const [fullGoalData, setFullGoalData] = useState<Goal | null>(null);
   const [isProcessingIngest, setIsProcessingIngest] = useState(false);
   const [columnOrder, setColumnOrder] = useState<Column[]>(() => {
     const savedOrder = localStorage.getItem('columnOrder');
@@ -363,15 +344,6 @@ const TableView: React.FC<TableViewProps> = ({ data }) => {
       if (!goalToFetch) {
         throw new Error('Goal not found');
       }
-
-      // Fetch the full goal data
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/goals/${goalToFetch._id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch goal data');
-      }
-      const fullData = await response.json();
-      setFullGoalData(fullData);
 
       setContextMenu({
         x: e.clientX,

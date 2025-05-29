@@ -389,6 +389,8 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+  color: #333;
+  background-color: #fff;
   transition: border-color 0.2s ease;
 }
 

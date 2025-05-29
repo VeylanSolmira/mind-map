@@ -4,26 +4,6 @@ import type { Goal } from '../types';
 import GoalTreeNavigator from './GoalTreeNavigator';
 import { type TreeNavigationNode } from '../utils/hierarchyUtils';
 
-/* Commented out local Goal interface
-interface Goal {
-  id: string;
-  hierarchyId: string;
-  description: string;
-  goalType: string;
-  naming: string;
-  done: boolean;
-  priority: number;
-  effectivePriority: number;
-  lastSelected: string;
-  decayRate: number;
-  score: number;
-  assessment: number;
-  communityValue: number;
-  start: string;
-  end: string;
-}
-*/
-
 interface CreateGoalModalProps {
   isOpen: boolean;
   onClose: () => void;

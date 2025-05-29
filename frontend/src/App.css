@@ -2,7 +2,8 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: visible;
 }
 
 #root {
@@ -11,6 +12,7 @@ html, body {
   padding: 0;
   text-align: center;
   width: 100%;
+  height: 100%;
 }
 
 .logo {
@@ -51,6 +53,7 @@ html, body {
 
 .App {
   text-align: center;
+  height: auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -58,6 +61,7 @@ html, body {
   width: 100%;
   margin: 0;
   padding: 0;
+  overflow: visible;
 }
 
 .App-header {
@@ -158,7 +162,7 @@ html, body {
   background: white;
   width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
+  overflow-x: visible;
 }
 
 .App-main.fullscreen {
@@ -176,7 +180,7 @@ html, body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));
   gap: 20px;
-  height: 100%;
+  height: auto;
   width: 100%;
   box-sizing: border-box;
   margin: 0;
@@ -188,8 +192,8 @@ html, body {
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 5px;
-  height: 100%;
-  overflow: auto;
+  height: auto;
+  overflow: visible;
   box-sizing: border-box;
   width: 100%;
   margin: 0;

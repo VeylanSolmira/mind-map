@@ -4,26 +4,6 @@ import type { Goal } from '../types';
 import { updateGoal } from '../services/api';
 import { calculateEffectivePriority } from '../utils/priorityUtils';
 
-/* Commented out local Goal interface
-interface Goal {
-  _id: string;
-  hierarchyId: string;
-  description: string;
-  goalType: string;
-  naming: string;
-  done: boolean;
-  priority: number;
-  score: number;
-  assessment: number;
-  communityValue: number;
-  start: string;
-  end: string;
-  effectivePriority: number;
-  lastSelected: string;
-  decayRate: number;
-}
-*/
-
 interface SelectViewProps {
   data: Goal[];
   onGoalUpdated: () => Promise<void>;
@@ -32,7 +12,6 @@ interface SelectViewProps {
 const SelectView: React.FC<SelectViewProps> = ({ data, onGoalUpdated }) => {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(false);
-  const [goals, setGoals] = useState<Goal[]>(data);
 
   const selectRandomGoal = () => {
     if (data.length === 0) return;
@@ -132,61 +111,9 @@ const SelectView: React.FC<SelectViewProps> = ({ data, onGoalUpdated }) => {
       const result = await updateGoal(goal._id, goal);
       
       // Update the goal in the state
-      setGoals(prevGoals => 
-        prevGoals.map(g => g._id === goal._id ? result : g)
-      );
+      setSelectedGoal(result);
     } catch (error) {
       console.error('Error saving goal:', error);
-    }
-  };
-
-  const handleMarkAsDone = async () => {
-    if (selectedGoal) {
-      setLoading(true);
-      try {
-        const updatedGoal = {
-          ...selectedGoal,
-          done: true,
-          lastSelected: new Date().toISOString()
-        };
-        
-        const result = await updateGoal(selectedGoal._id, updatedGoal);
-        
-        // Show the updated values for 1 second before selecting a new goal
-        setSelectedGoal(result);
-        await onGoalUpdated(); // Refresh the goals data
-        setTimeout(() => {
-          selectRandomGoal();
-        }, 1000);
-      } catch (error) {
-        console.error('Error marking goal as done:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleSkip = async () => {
-    if (selectedGoal) {
-      setLoading(true);
-      try {
-        const updatedGoal = {
-          ...selectedGoal,
-          lastSelected: new Date().toISOString()
-        };
-        
-        const result = await updateGoal(selectedGoal._id, updatedGoal);
-        // Show the updated values for 1 second before selecting a new goal
-        setSelectedGoal(result);
-        await onGoalUpdated(); // Refresh the goals data
-        setTimeout(() => {
-          selectRandomGoal();
-        }, 1000);
-      } catch (error) {
-        console.error('Error skipping goal:', error);
-      } finally {
-        setLoading(false);
-      }
     }
   };
 

@@ -7,28 +7,10 @@ import KanbanView from './components/KanbanView'
 import CalendarView from './components/CalendarView'
 import SelectView from './components/SelectView'
 import CreateGoalModal from './components/CreateGoalModal'
-import { getGoals, createGoal, updateGoal } from './services/api'
-import { calculateEffectivePriority } from './utils/priorityUtils'
+import { getGoals, createGoal } from './services/api'
 import type { Goal } from './types'
 
 type ViewType = 'tree' | 'table' | 'timeline' | 'kanban' | 'calendar' | 'select';
-
-/* Commented out local Goal interface
-interface Goal {
-  id: string;
-  hierarchyId: string;
-  description: string;
-  goalType: string;
-  naming: string;
-  done: boolean;
-  priority: number;
-  score: number;
-  assessment: number;
-  communityValue: number;
-  start: string;
-  end: string;
-}
-*/
 
 const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -41,26 +23,9 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const updateEffectivePriorities = async () => {
-    const updatedGoals = goals.map(goal => ({
-      ...goal,
-      effectivePriority: calculateEffectivePriority(
-        goal.priority,
-        goal.decayRate,
-        goal.lastSelected
-      )
-    }));
-
-    // Update each goal in the database
-    for (const goal of updatedGoals) {
-      try {
-        await updateGoal(goal._id, goal);
-      } catch (error) {
-        console.error(`Error updating goal ${goal._id}:`, error);
-      }
-    }
-
-    // Update local state
-    setGoals(updatedGoals);
+    // For now, just refresh the goals to get the latest data
+    // The backend already calculates effective priorities on save
+    await refreshGoals();
   };
 
   const refreshGoals = async () => {
@@ -187,7 +152,7 @@ const App: React.FC = () => {
           {activeView === 'tree' && <div className="view-panel"><TreeView data={goals} /></div>}
           {activeView === 'table' && <div className="view-panel"><TableView data={goals} /></div>}
           {activeView === 'timeline' && <div className="view-panel"><TimelineView data={goals} /></div>}
-          {activeView === 'kanban' && <div className="view-panel"><KanbanView data={goals} /></div>}
+          {activeView === 'kanban' && <div className="view-panel"><KanbanView data={goals} onDataRefresh={refreshGoals} /></div>}
           {activeView === 'calendar' && <div className="view-panel"><CalendarView data={goals} /></div>}
           {activeView === 'select' && <div className="view-panel"><SelectView data={goals} onGoalUpdated={refreshGoals} /></div>}
         </div>
