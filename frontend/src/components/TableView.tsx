@@ -771,6 +771,7 @@ const TableView: React.FC<TableViewProps> = ({ data }) => {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleCreateGoal}
+          existingGoals={data}
         />
       )}
     </div>

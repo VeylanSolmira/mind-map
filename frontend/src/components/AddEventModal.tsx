@@ -200,6 +200,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             isOpen={isCreateGoalModalOpen}
             onClose={() => setIsCreateGoalModalOpen(false)}
             onSave={handleCreateGoal}
+            existingGoals={goals}
           />
         )}
       </div>
