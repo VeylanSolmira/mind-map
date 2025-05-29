@@ -1,16 +1,12 @@
-import { TreeNode } from '../types';
+import type { TreeNode } from '../types/index';
 
 export function buildTree(goals: TreeNode[]): TreeNode[] {
-  console.log('Building tree from goals:', goals);
-  
   // Sort goals by hierarchyId to ensure parents are processed before children
   const sortedGoals = [...goals].sort((a, b) => {
     const aParts = a.hierarchyId?.split('.') || [];
     const bParts = b.hierarchyId?.split('.') || [];
     return aParts.length - bParts.length;
   });
-
-  console.log('Sorted goals:', sortedGoals.map(g => ({ _id: g._id, hierarchyId: g.hierarchyId })));
 
   const goalMap = new Map<string, TreeNode>();
   const tree: TreeNode[] = [];
@@ -34,7 +30,7 @@ export function buildTree(goals: TreeNode[]): TreeNode[] {
         parent.children = parent.children || [];
         parent.children.push(goalWithChildren);
       } else {
-        console.warn(`Parent with hierarchyId ${parentHierarchyId} not found for goal ${goal.hierarchyId}`);
+        // Parent not found - add to root
         tree.push(goalWithChildren);
       }
     } else {

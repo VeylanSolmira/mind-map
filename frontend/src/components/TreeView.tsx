@@ -132,16 +132,12 @@ const AddNodeForm: React.FC<AddNodeFormProps> = ({ onSave, onCancel, position })
 
 // Build tree structure from flat goals array
 function buildTree(goals: TreeNode[]): TreeNode[] {
-  console.log('Building tree from goals:', goals);
-  
   // Sort goals by hierarchyId to ensure parents are processed before children
   const sortedGoals = [...goals].sort((a, b) => {
     const aParts = a.hierarchyId?.split('.') || [];
     const bParts = b.hierarchyId?.split('.') || [];
     return aParts.length - bParts.length;
   });
-
-  console.log('Sorted goals:', sortedGoals.map(g => ({ _id: g._id, hierarchyId: g.hierarchyId })));
 
   const goalMap = new Map<string, TreeNode>();
   const tree: TreeNode[] = [];
@@ -274,7 +270,6 @@ const TreeView: React.FC<TreeViewProps> = ({ data: initialData }) => {
 
   const handleNodeClick = (node: { data: RawNodeDatum }) => {
     if (!editingNode) {
-      console.log('Starting edit for node:', node.data.name);
       setEditingNode(node.data.name);
       setEditValue(node.data.name);
     }
@@ -288,12 +283,6 @@ const TreeView: React.FC<TreeViewProps> = ({ data: initialData }) => {
         if (!goalToUpdate) {
           throw new Error('Goal not found');
         }
-
-        console.log('Updating goal:', {
-          _id: goalToUpdate._id,
-          hierarchyId: goalToUpdate.hierarchyId,
-          description: goalToUpdate.description
-        });
 
         // Use the updateGoal function from our API service
         await updateGoal(goalToUpdate._id, {
@@ -434,6 +423,59 @@ const TreeView: React.FC<TreeViewProps> = ({ data: initialData }) => {
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, []);
+
+  const handleAddChildNode = (node: RawNodeDatum) => {
+    const goal = node.data as Goal;
+    
+    const newNode: Omit<Goal, '_id'> = {
+      hierarchyId: `${goal.hierarchyId}.1`,
+      description: 'New Child Goal',
+      goalType: 'Micro',
+      done: false,
+      priority: 0,
+      effectivePriority: 0,
+      lastSelected: new Date().toISOString(),
+      decayRate: 0.001,
+      score: 0,
+      assessment: 0,
+      communityValue: 0,
+      start: '',
+      end: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Start editing immediately for new nodes
+    setEditingNode(newNode);
+  };
+
+  const handleEditNode = (node: RawNodeDatum) => {
+    const goal = node.data as Goal;
+    setEditingNode(goal);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingNode) return;
+    
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      await fetch(`${API_URL}/goals/${editingNode._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description: editingNode.description,
+          goalType: editingNode.goalType,
+          done: editingNode.done,
+          priority: editingNode.priority
+        }),
+      });
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      // TODO: Show error message to user
+    }
+  };
 
   return (
     <div className="tree-view">

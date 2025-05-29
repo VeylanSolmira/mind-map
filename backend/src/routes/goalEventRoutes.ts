@@ -17,10 +17,8 @@ router.get('/goal/:goalId', async (req, res) => {
 
 // Get events for a date range
 router.get('/date-range', async (req, res) => {
-  console.log('Received date-range request:', req.query);
   try {
     const { startDate, endDate } = req.query;
-    console.log('Querying with dates:', { startDate, endDate });
     
     const events = await GoalEvent.find({
       date: {
@@ -29,11 +27,9 @@ router.get('/date-range', async (req, res) => {
       }
     }).sort({ date: 1 });
     
-    console.log('Found events:', events);
     res.json(events);
   } catch (error) {
-    console.error('Error in date-range route:', error);
-    res.status(500).json({ message: 'Error fetching events for date range', error });
+    res.status(500).json({ message: 'Error fetching goal events by date range', error });
   }
 });
 

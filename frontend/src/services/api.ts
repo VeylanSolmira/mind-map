@@ -15,9 +15,7 @@ const axiosInstance = axios.create({
 // Get all goals
 export const getGoals = async (): Promise<Goal[]> => {
   try {
-    console.log('Fetching goals from:', `${API_BASE_URL}/goals`);
     const response = await axiosInstance.get('/goals');
-    console.log('Response:', response.data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

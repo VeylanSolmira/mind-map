@@ -32,6 +32,7 @@ interface SelectViewProps {
 const SelectView: React.FC<SelectViewProps> = ({ data, onGoalUpdated }) => {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(false);
+  const [goals, setGoals] = useState<Goal[]>(data);
 
   const selectRandomGoal = () => {
     if (data.length === 0) return;
@@ -80,16 +81,7 @@ const SelectView: React.FC<SelectViewProps> = ({ data, onGoalUpdated }) => {
         effectivePriority: newEffectivePriority
       };
       
-      console.log('Sending PUT request with:', {
-        id: selectedGoal._id,
-        updatedGoal
-      });
-      
-      const result = await updateGoal(selectedGoal._id, updatedGoal);
-      console.log('PUT response:', result);
-      
-      // Show the updated values for 1 second before selecting a new goal
-      setSelectedGoal(result);
+      await handleSaveGoal(updatedGoal);
       await onGoalUpdated(); // Refresh the goals data
       setTimeout(() => {
         selectRandomGoal();
@@ -123,9 +115,7 @@ const SelectView: React.FC<SelectViewProps> = ({ data, onGoalUpdated }) => {
         effectivePriority: newEffectivePriority
       };
       
-      const result = await updateGoal(selectedGoal._id, updatedGoal);
-      // Show the updated values for 1 second before selecting a new goal
-      setSelectedGoal(result);
+      await handleSaveGoal(updatedGoal);
       await onGoalUpdated(); // Refresh the goals data
       setTimeout(() => {
         selectRandomGoal();
@@ -134,6 +124,69 @@ const SelectView: React.FC<SelectViewProps> = ({ data, onGoalUpdated }) => {
       console.error('Error updating goal:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveGoal = async (goal: Goal) => {
+    try {
+      const result = await updateGoal(goal._id, goal);
+      
+      // Update the goal in the state
+      setGoals(prevGoals => 
+        prevGoals.map(g => g._id === goal._id ? result : g)
+      );
+    } catch (error) {
+      console.error('Error saving goal:', error);
+    }
+  };
+
+  const handleMarkAsDone = async () => {
+    if (selectedGoal) {
+      setLoading(true);
+      try {
+        const updatedGoal = {
+          ...selectedGoal,
+          done: true,
+          lastSelected: new Date().toISOString()
+        };
+        
+        const result = await updateGoal(selectedGoal._id, updatedGoal);
+        
+        // Show the updated values for 1 second before selecting a new goal
+        setSelectedGoal(result);
+        await onGoalUpdated(); // Refresh the goals data
+        setTimeout(() => {
+          selectRandomGoal();
+        }, 1000);
+      } catch (error) {
+        console.error('Error marking goal as done:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleSkip = async () => {
+    if (selectedGoal) {
+      setLoading(true);
+      try {
+        const updatedGoal = {
+          ...selectedGoal,
+          lastSelected: new Date().toISOString()
+        };
+        
+        const result = await updateGoal(selectedGoal._id, updatedGoal);
+        // Show the updated values for 1 second before selecting a new goal
+        setSelectedGoal(result);
+        await onGoalUpdated(); // Refresh the goals data
+        setTimeout(() => {
+          selectRandomGoal();
+        }, 1000);
+      } catch (error) {
+        console.error('Error skipping goal:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
