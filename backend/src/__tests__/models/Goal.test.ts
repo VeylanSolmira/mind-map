@@ -7,7 +7,7 @@ describe('Goal Model Test', () => {
       hierarchyId: '1.1',
       description: 'Test Description',
       goalType: 'task',
-      status: 'active',
+      status: 'Not Started',
       startDate: new Date(),
       endDate: new Date(Date.now() + 86400000), // tomorrow
       priority: 5,
@@ -51,7 +51,7 @@ describe('Goal Model Test', () => {
       hierarchyId: '1.1',
       description: 'Test Description',
       goalType: 'task',
-      status: 'active',
+      status: 'Not Started',
       startDate: new Date(),
       endDate: new Date(Date.now() + 86400000),
       priority: 5,
@@ -71,12 +71,12 @@ describe('Goal Model Test', () => {
     
     const updatedGoal = await Goal.findByIdAndUpdate(
       goal._id,
-      { priority: 8, status: 'completed' },
+      { priority: 8, status: 'Completed' },
       { new: true }
     );
     
     expect(updatedGoal?.priority).toBe(8);
-    expect(updatedGoal?.status).toBe('completed');
+    expect(updatedGoal?.status).toBe('Completed');
   });
 
   it('should delete goal successfully', async () => {
@@ -84,7 +84,7 @@ describe('Goal Model Test', () => {
       hierarchyId: '1.1',
       description: 'Test Description',
       goalType: 'task',
-      status: 'active',
+      status: 'Not Started',
       startDate: new Date(),
       endDate: new Date(Date.now() + 86400000),
       priority: 5,

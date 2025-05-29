@@ -27,7 +27,7 @@ export interface IGoal extends Document {
   date_added: string;  // Date added from CSV
   startDate?: Date;
   endDate?: Date;
-  status: 'active' | 'completed' | 'archived';
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,8 +66,8 @@ const GoalSchema = new Schema<IGoal>({
   },
   status: {
     type: String,
-    enum: ['active', 'completed', 'archived'],
-    default: 'active'
+    enum: ['Not Started', 'In Progress', 'Completed', 'Cancelled'],
+    default: 'Not Started'
   }
 }, {
   timestamps: true

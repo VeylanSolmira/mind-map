@@ -13,7 +13,7 @@ interface KanbanViewProps {
 interface KanbanColumn {
   id: string;
   title: string;
-  status: 'not-started' | 'in-progress' | 'completed';
+  status: 'Not Started' | 'In Progress' | 'Completed';
   items: Goal[];
   color: string;
 }
@@ -29,21 +29,21 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data, onDataRefresh }) => {
       { 
         id: 'not-started', 
         title: 'Not Started', 
-        status: 'not-started',
+        status: 'Not Started',
         items: [], 
         color: '#e3f2fd' 
       },
       { 
         id: 'in-progress', 
         title: 'In Progress', 
-        status: 'in-progress',
+        status: 'In Progress',
         items: [], 
         color: '#fff3e0' 
       },
       { 
         id: 'completed', 
         title: 'Completed', 
-        status: 'completed',
+        status: 'Completed',
         items: [], 
         color: '#e8f5e9' 
       }
@@ -51,20 +51,13 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data, onDataRefresh }) => {
 
     // Sort goals into columns based on their status and done flag
     data.forEach(goal => {
-      if (goal.done || goal.status === 'completed') {
+      if (goal.done || goal.status === 'Completed') {
         initialColumns[2].items.push(goal);
+      } else if (goal.status === 'In Progress') {
+        initialColumns[1].items.push(goal);
       } else {
-        // Kanban column logic based only on explicit status, not lastSelected
-        const hasStartDate = goal.start && goal.start.trim() !== '';
-        const startDate = hasStartDate ? new Date(goal.start) : null;
-        const now = new Date();
-        const hasStarted = startDate && startDate <= now;
-        
-        if (hasStarted) {
-          initialColumns[1].items.push(goal);
-        } else {
-          initialColumns[0].items.push(goal);
-        }
+        // Default to Not Started
+        initialColumns[0].items.push(goal);
       }
     });
 
@@ -121,21 +114,21 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data, onDataRefresh }) => {
       { 
         id: 'not-started', 
         title: 'Not Started', 
-        status: 'not-started',
+        status: 'Not Started',
         items: [], 
         color: '#e3f2fd' 
       },
       { 
         id: 'in-progress', 
         title: 'In Progress', 
-        status: 'in-progress',
+        status: 'In Progress',
         items: [], 
         color: '#fff3e0' 
       },
       { 
         id: 'completed', 
         title: 'Completed', 
-        status: 'completed',
+        status: 'Completed',
         items: [], 
         color: '#e8f5e9' 
       }
@@ -143,20 +136,13 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data, onDataRefresh }) => {
 
     // Rebuild columns from current data
     data.forEach(g => {
-      if (g.done || g.status === 'completed') {
+      if (g.done || g.status === 'Completed') {
         freshColumns[2].items.push(g);
+      } else if (g.status === 'In Progress') {
+        freshColumns[1].items.push(g);
       } else {
-        // Kanban column logic based only on explicit status, not lastSelected
-        const hasStartDate = g.start && g.start.trim() !== '';
-        const startDate = hasStartDate ? new Date(g.start) : null;
-        const now = new Date();
-        const hasStarted = startDate && startDate <= now;
-        
-        if (hasStarted) {
-          freshColumns[1].items.push(g);
-        } else {
-          freshColumns[0].items.push(g);
-        }
+        // Default to Not Started
+        freshColumns[0].items.push(g);
       }
     });
 
@@ -200,12 +186,12 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data, onDataRefresh }) => {
 
         // Update goal status in database
         const updatedGoal: Partial<Goal> = {
-          done: destColumn.status === 'completed',
-          status: destColumn.status === 'completed' ? 'completed' as const : 'active' as const,
-          // Don't update lastSelected for column moves - it interferes with column logic
-          start: destColumn.status === 'in-progress' && !goal.start 
-            ? new Date().toISOString()  // Set start date when moving to in-progress
-            : destColumn.status === 'not-started' 
+          done: destColumn.status === 'Completed',
+          status: destColumn.status,
+          // Set start date when moving to in-progress
+          start: destColumn.status === 'In Progress' && !goal.start 
+            ? new Date().toISOString()
+            : destColumn.status === 'Not Started' 
             ? ''  // Clear start date when moving to not-started
             : goal.start  // Keep existing start date for other moves
         };
@@ -404,4 +390,4 @@ const KanbanView: React.FC<KanbanViewProps> = ({ data, onDataRefresh }) => {
   );
 };
 
-export default KanbanView; 
+export default KanbanView;

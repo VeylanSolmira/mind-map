@@ -6,18 +6,33 @@ let mongoServer: MongoMemoryServer;
 // Connect to the in-memory database before running tests
 beforeAll(async () => {
   try {
+    console.log('Starting MongoDB Memory Server...');
     mongoServer = await MongoMemoryServer.create({
       instance: {
-        storageEngine: 'wiredTiger'
+        storageEngine: 'wiredTiger',
+        port: 0 // Use random available port
+      },
+      binary: {
+        downloadDir: './mongodb-binaries', // Cache binaries locally
+        version: '6.0.9' // Use specific version to avoid downloads
       }
     });
+    
     const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+    console.log('MongoDB Memory Server started at:', mongoUri);
+    
+    await mongoose.connect(mongoUri, {
+      maxPoolSize: 1, // Limit connection pool for tests
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    
+    console.log('Connected to MongoDB Memory Server');
   } catch (error) {
     console.error('Failed to start MongoDB Memory Server:', error);
     throw error;
   }
-}, 30000); // Increase timeout to 30 seconds
+}, 60000); // Increase timeout to 60 seconds
 
 // Clear all test data after each test
 afterEach(async () => {

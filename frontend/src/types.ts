@@ -25,7 +25,7 @@ export interface Goal {
   date_added: string;
   startDate?: string;  // ISO date string
   endDate?: string;    // ISO date string
-  status: 'active' | 'completed' | 'archived';
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Cancelled';
   createdAt: string;   // ISO date string
   updatedAt: string;   // ISO date string
   children?: Goal[];

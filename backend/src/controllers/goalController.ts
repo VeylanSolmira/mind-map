@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import Goal, { IGoal } from '../models/Goal';
+import { sendErrorResponse, sendSuccessResponse } from '../utils/asyncHandler';
 
 export const getAllGoals = async (req: Request, res: Response) => {
   try {
     const goals = await Goal.find();
-    res.json(goals);
+    sendSuccessResponse(res, goals);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching goals', error });
+    sendErrorResponse(res, 500, 'Error fetching goals', error);
   }
 };
 
@@ -14,11 +15,11 @@ export const getGoalById = async (req: Request, res: Response) => {
   try {
     const goal = await Goal.findById(req.params._id);
     if (!goal) {
-      return res.status(404).json({ message: 'Goal not found' });
+      return sendErrorResponse(res, 404, 'Goal not found');
     }
-    res.json(goal);
+    sendSuccessResponse(res, goal);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching goal', error });
+    sendErrorResponse(res, 500, 'Error fetching goal', error);
   }
 };
 
@@ -30,11 +31,11 @@ export const updateGoal = async (req: Request, res: Response) => {
       { new: true }
     );
     if (!goal) {
-      return res.status(404).json({ message: 'Goal not found' });
+      return sendErrorResponse(res, 404, 'Goal not found');
     }
-    res.json(goal);
+    sendSuccessResponse(res, goal);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating goal', error });
+    sendErrorResponse(res, 500, 'Error updating goal', error);
   }
 };
 
@@ -42,9 +43,9 @@ export const createGoal = async (req: Request, res: Response) => {
   try {
     const goal = new Goal(req.body);
     await goal.save();
-    res.status(201).json(goal);
+    sendSuccessResponse(res, goal, 201);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating goal', error });
+    sendErrorResponse(res, 500, 'Error creating goal', error);
   }
 };
 
